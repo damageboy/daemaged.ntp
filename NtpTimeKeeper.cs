@@ -68,18 +68,18 @@ namespace Daemaged.NTP
 
       _ntp = new Ntp(NtpHost) {VersionNumber = 4, Timeout = Timeout};
 
-      Sync();
-
       _sleepPeriod = PollingTime*1000;
       _stopEvent.Reset();
 
       // Assuming this worked at least once, lets do it again...
-      _syncThread = new Thread(KeepNtpTime)
-                      {
+      _syncThread = new Thread(KeepNtpTime) {
                         IsBackground = true,
                         Name = "NtpTimeKeeper"
-                      };
+                    };
       _syncThread.Start();
+
+      // Even if this fails the thread will be there
+      Sync();
     }
 
     /// <summary>
