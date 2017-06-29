@@ -10,7 +10,7 @@ namespace Daemaged.NTP
   [StructLayout(LayoutKind.Sequential)]
   public struct NtpTimestampDifference : IComparable
   {
-    private readonly long _difference;
+    readonly long _difference;
 
     internal NtpTimestampDifference(long d)
     {
@@ -24,10 +24,10 @@ namespace Daemaged.NTP
     /// <returns>A 32-bit signed integer that indicates the relative order of the objects being compared. See <see cref="M:System.IComparable.CompareTo(System.Object)" /> for details.</returns>
     public int CompareTo(object value)
     {
-      if (value is NtpTimestamp) {
+      if (value is NtpTimestamp)
         return _difference.CompareTo(((NtpTimestampDifference) value)._difference);
-      }
-      return _difference.CompareTo(value);
+      throw new ArgumentException($"must be of type {nameof(NtpTimestampDifference)}", nameof(value));
+
     }
 
     /// <summary>
@@ -55,7 +55,7 @@ namespace Daemaged.NTP
     /// </summary>
     /// <value>True for positive differences and zero; false for negative
     /// differences.</value>
-    public bool Positive { get { return (_difference >= 0L); } }
+    public bool Positive => (_difference >= 0L);
 
     internal long ToInt64()
     { return _difference; }
@@ -95,7 +95,7 @@ namespace Daemaged.NTP
     /// Gets the value of this instance expressed in whole and fractional seconds.
     /// </summary>
     /// <remarks>The value of this instance expressed in whole and fractional seconds.</remarks>
-    public double TotalSeconds { get { return ToTimeSpan().TotalSeconds; } }
+    public double TotalSeconds => ToTimeSpan().TotalSeconds;
 
     /// <summary>
     /// The sub-second part of the time difference, on microsecond scale.
@@ -110,7 +110,7 @@ namespace Daemaged.NTP
       }
     }
 
-    private ulong GetFraction()
+    ulong GetFraction()
     {
       ulong diff;
       if (_difference >= 0L)
@@ -120,7 +120,7 @@ namespace Daemaged.NTP
       return (diff & 0xffffffffL);
     }
 
-    private int GetScaledFraction(ulong scale)
+    int GetScaledFraction(ulong scale)
     {
       return (int) (GetFraction()*scale >> 32);
     }

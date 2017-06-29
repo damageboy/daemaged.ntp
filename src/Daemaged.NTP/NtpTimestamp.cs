@@ -19,15 +19,16 @@ namespace Daemaged.NTP
     /// plus a magical value, because the expression is off by 1 hour (perhaps
     /// due to daylight savings offset).
     /// </summary>
-    private const long EPOCH_TICKS = 599266080000000000;
+    const long EPOCH_TICKS = 599266080000000000;
     internal const long TickToSecScale = 10000000;
     /// <summary>
     /// Seconds from the NTP Epoch (00:00:00 on 1 January 1900) to the Unix
     /// Epoch (00:00:00 UTC on 1 January 1970)
     /// </summary>
-    private const long NTP2_UNIX_EPOCH_SECONDS = 0x83aa7e80L;
-    private static readonly Random randomGenerator;
-    private ulong _timestamp;
+    const long NTP2_UNIX_EPOCH_SECONDS = 0x83aa7e80L;
+
+    static readonly Random randomGenerator;
+    ulong _timestamp;
     /// <summary>
     /// Constructs the timestamp from .NET time.
     /// </summary>
@@ -74,7 +75,7 @@ namespace Daemaged.NTP
       _timestamp = (ntpSecs << 0x20) | ntpFrac;
     }
 
-    private NtpTimestamp(ulong t)
+    NtpTimestamp(ulong t)
     {
       _timestamp = t;
     }
@@ -87,8 +88,8 @@ namespace Daemaged.NTP
     public int CompareTo(object value)
     {
       if (value is NtpTimestamp)
-        return _timestamp.CompareTo(((NtpTimestamp)value)._timestamp);      
-      return _timestamp.CompareTo(value);
+        return _timestamp.CompareTo(((NtpTimestamp)value)._timestamp);
+      throw new ArgumentException($"must be of type {nameof(NtpTimestamp)}", nameof(value));
     }
 
     /// <summary>
@@ -134,7 +135,8 @@ namespace Daemaged.NTP
     /// Minimal validity check according to RFC 1305.
     /// </summary>
     /// <value>True for all timestamps except 0.</value>
-    public bool IsValid { get { return (_timestamp != 0L); } }
+    public bool IsValid => (_timestamp != 0L);
+
     /// <summary>
     /// Converts timestamp to tick count (without epoch).
     /// </summary>
@@ -146,7 +148,7 @@ namespace Daemaged.NTP
       return (secstoTicks + ((long)((fraction * TickToSecScale) >> 0x20)));
     }
 
-    private ulong GetFraction() { return (_timestamp & 0xffffffffL); }
+    ulong GetFraction() { return (_timestamp & 0xffffffffL); }
 
     /// <summary>
     /// Compare two instances of NtpTimestamp.
@@ -340,16 +342,14 @@ namespace Daemaged.NTP
     /// </summary>
     /// <remarks>Rounds down.</remarks>
     /// <value>A number between 0 and 10^6-1.</value>
-    public int Microsecond
-    {
-      get { return GetScaledFraction(0xf4240L); }
-    }
-    private int GetScaledFraction(ulong scale)
+    public int Microsecond => GetScaledFraction(0xf4240L);
+
+    int GetScaledFraction(ulong scale)
     {
       return (int)(GetFraction() * scale >> 32);
     }
 
-    private static uint GetNumber(byte[] data, int offset)
+    static uint GetNumber(byte[] data, int offset)
     {
       uint x = 0;
       for (var i = 0; i < 4; i++)

@@ -71,9 +71,9 @@ namespace Daemaged.NTP
     /// </summary>
     public const int DefaultPort = 123;
 
-    private readonly IPEndPoint _remoteEndPoint;
-    private int _timeout;
-    private byte _versionNumber;
+    readonly IPEndPoint _remoteEndPoint;
+    int _timeout;
+    byte _versionNumber;
 
     /// <summary>
     /// Creates an instance of <see cref="T:Daemaged.NTP.Ntp" /> class and binds it to the specified NTP/SNTP time server.
@@ -89,13 +89,13 @@ namespace Daemaged.NTP
     public Ntp(string serverName, int serverPort)
     {
       if (serverName == null) {
-        throw new ArgumentNullException("serverName");
+        throw new ArgumentNullException(nameof(serverName));
       }
       if (serverName == string.Empty) {
         throw new ArgumentException("_remoteEndPoint");
       }
       if ((serverPort < 1) || (serverPort > 0xffff)) {
-        throw new ArgumentException("Invalid port", "serverPort");
+        throw new ArgumentException("Invalid port", nameof(serverPort));
       }
       _remoteEndPoint = GetRemoteServer(serverName, serverPort);
       _timeout = 30000;
@@ -109,7 +109,7 @@ namespace Daemaged.NTP
     /// <value>Time in milliseconds. Must be positive, default is 30000 (30 seconds).</value>
     public int Timeout
     {
-      get { return _timeout; }
+      get => _timeout;
       set
       {
         if (value <= 0)
@@ -124,22 +124,22 @@ namespace Daemaged.NTP
     /// <value>1 to 4. The current NTP version is 3, the SNTP version is 4. Default is 3.</value>
     public int VersionNumber
     {
-      get { return _versionNumber; }
+      get => _versionNumber;
       set {
         if ((value < 1) || (value > 4))
-          throw new ArgumentException(string.Format("Protocol version number must be between 1 and 4 (not {0}).", value));
+          throw new ArgumentException($"Protocol version number must be between 1 and 4 (not {value}).");
         _versionNumber = (byte) value;
       }
     }
 
-    private static IPEndPoint GetRemoteServer(string hostName, int port)
+    static IPEndPoint GetRemoteServer(string hostName, int port)
     {
       var point = ToEndPoint(hostName, port);
       if (point != null)
         return point;
-      var hostEntry = Dns.GetHostEntry(hostName);
+      var hostEntry = Dns.GetHostEntryAsync(hostName).Result;
       if (hostEntry.AddressList.Length == 0)
-        throw new NtpException(string.Format("Host {0} has no IP address.", hostName));
+        throw new NtpException($"Host {hostName} has no IP address.");
       return ToEndPoint(hostEntry, port);
     }
 
@@ -158,45 +158,45 @@ namespace Daemaged.NTP
       }
     }
 
-    private NtpPacket ReceiveFrom(Socket s)
+    NtpPacket ReceiveFrom(Socket s)
     {
       int num;
       var packet = new NtpPacket();
-      EndPoint remoteEP = new IPEndPoint(_remoteEndPoint.Address, _remoteEndPoint.Port);
+      EndPoint remoteEp = new IPEndPoint(_remoteEndPoint.Address, _remoteEndPoint.Port);
       try {
-        num = s.ReceiveFrom(packet.Data, ref remoteEP);
+        num = s.ReceiveFrom(packet.Data, ref remoteEp);
       }
       catch (SocketException exception) {
-        var nativeErrorCode = exception.NativeErrorCode;
-        switch ((SocketError) nativeErrorCode) {
+        var nativeErrorCode = exception.SocketErrorCode;
+        switch (nativeErrorCode) {
           case SocketError.ConnectionReset:
             throw new NtpException("No time server at the specified address.", exception);
 
           case SocketError.TimedOut:
-            throw new NtpException(string.Format("Request timed out - no answer in {0} ms.", _timeout), exception);
+            throw new NtpException($"Request timed out - no answer in {_timeout} ms.", exception);
         }
-        throw new NtpException("Socket error " + nativeErrorCode + " occurred.", exception);
+        throw new NtpException($"Socket error {nativeErrorCode} occurred.", exception);
       }
       packet.SetDestinationTimestamp(NtpTimestamp.Now);
       if (num < 0x30) {
-        throw new NtpException(string.Format("Invalid NTP packet size of {0} bytes only.", num));
+        throw new NtpException($"Invalid NTP packet size of {num} bytes only.");
       }
       if (packet.Mode != NtpMode.Server) {
-        throw new NtpException(string.Format("Invalid NTP mode {0}.", (int) packet.Mode));
+        throw new NtpException($"Invalid NTP mode {(int) packet.Mode}.");
       }
       return packet;
     }
 
-    private void Send(Socket s)
+    void Send(Socket s)
     {
       var packet = new NtpPacket(NtpMode.Client, _versionNumber, NtpTimestamp.Now);
       s.SendTo(packet.Data, _remoteEndPoint);
     }
 
-    private static IPEndPoint ToEndPoint(IPHostEntry hostEntry, int port)
+    static IPEndPoint ToEndPoint(IPHostEntry hostEntry, int port)
     {
-      for (var i = 0; i < hostEntry.AddressList.Length; i++) {
-        var address = hostEntry.AddressList[i];
+      foreach (var address in hostEntry.AddressList)
+      {
         if (address.AddressFamily == AddressFamily.InterNetwork)
           return new IPEndPoint(address, port);
       }
@@ -206,7 +206,7 @@ namespace Daemaged.NTP
       return new IPEndPoint(hostEntry.AddressList[0], port);
     }
 
-    private static IPEndPoint ToEndPoint(string host, int port)
+    static IPEndPoint ToEndPoint(string host, int port)
     {
       if (host.IndexOf(":") >= 0) {
         IPAddress address;

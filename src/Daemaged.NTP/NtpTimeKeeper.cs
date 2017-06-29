@@ -4,6 +4,16 @@ using System.Threading;
 
 namespace Daemaged.NTP
 {
+  public class NtpErrorEventArgs : EventArgs
+  {
+    public Exception Exception { get; }
+
+    public NtpErrorEventArgs(Exception exception)
+    {
+      Exception = exception;
+    }
+  }
+
   /// <summary>
   /// Utility class that spins up a background thread to keep the NTP time offset updated
   /// </summary>
@@ -11,13 +21,13 @@ namespace Daemaged.NTP
   {
     #region Private state
 
-    private static int _sleepPeriod;
-    private static Thread _syncThread;
-    private static long _timeDiff;
-    private static int _stratum;
-    private static DateTime _lastTransmit;
-    private static Ntp _ntp;
-    private static readonly ManualResetEvent _stopEvent;
+    static int _sleepPeriod;
+    static Thread _syncThread;
+    static long _timeDiff;
+    static int _stratum;
+    static DateTime _lastTransmit;
+    static Ntp _ntp;
+    static readonly ManualResetEvent _stopEvent;
 
     #endregion
 
@@ -43,7 +53,7 @@ namespace Daemaged.NTP
     /// <summary>
     /// An event that will be fired every time a sync fails.
     /// </summary>
-    public static EventHandler<ErrorEventArgs> FailedSync;
+    public static EventHandler<NtpErrorEventArgs> FailedSync;
 
     /// <summary>
     /// An event that will be fired every time a sync succeeds.
@@ -94,12 +104,9 @@ namespace Daemaged.NTP
       _syncThread = null;
     }
 
-    public static bool IsSyncing
-    {
-      get { return _syncThread != null; }
-    }
+    public static bool IsSyncing => _syncThread != null;
 
-    private static void KeepNtpTime()
+    static void KeepNtpTime()
     {
       // Loop forever, syncing every _sleep period, until the stop event is set
       while (!_stopEvent.WaitOne(_sleepPeriod))
@@ -113,12 +120,12 @@ namespace Daemaged.NTP
         catch (Exception e)
         {
           if (FailedSync != null)
-            FailedSync(null, new ErrorEventArgs(e));
+            FailedSync(null, new NtpErrorEventArgs(e));
         }
       }
     }
 
-    private static void Sync()
+    static void Sync()
     {
       var resp = _ntp.GetTime();
       _timeDiff = resp.TimeOffset.ToTicks();
@@ -131,47 +138,29 @@ namespace Daemaged.NTP
     /// <summary>
     /// UtcNow  adjusted to the latest recovered time offset in ticks
     /// </summary>
-    public static long AdjustedUtcNowTicks
-    {
-      get { return DateTime.UtcNow.Ticks + _timeDiff; }
-    }
+    public static long AdjustedUtcNowTicks => DateTime.UtcNow.Ticks + _timeDiff;
 
     /// <summary>
     /// UtcNow adjusted to the latest recovered time offset
     /// </summary>
-    public static DateTime AdjustedUtcNow
-    {
-      get { return DateTime.UtcNow.AddTicks(_timeDiff); }
-    }
+    public static DateTime AdjustedUtcNow => DateTime.UtcNow.AddTicks(_timeDiff);
 
     /// <summary>
     /// The latest recovered time offset in ticks
     /// </summary>
-    public static long LastRecordedDiffTime
-    {
-      get { return _timeDiff; }
-    }
+    public static long LastRecordedDiffTime => _timeDiff;
 
     /// <summary>
     /// The NTP server's Stratum value
     /// </summary>
-    public static int Stratum
-    {
-      get { return _stratum; }
-    }
+    public static int Stratum => _stratum;
 
     /// <summary>
     /// The time-stamp when the last successful transition from the server was made
     /// </summary>
-    public static DateTime LastTransmitTime
-    {
-      get { return _lastTransmit; }
-    }
+    public static DateTime LastTransmitTime => _lastTransmit;
 
-    public static TimeSpan TimeSinceLastSuccessfulSync
-    {
-      get { return DateTime.UtcNow - LastTransmitTime + TimeSpan.FromTicks(_timeDiff); }
-    }
+    public static TimeSpan TimeSinceLastSuccessfulSync => DateTime.UtcNow - LastTransmitTime + TimeSpan.FromTicks(_timeDiff);
 
     #endregion
   }

@@ -20,7 +20,7 @@ namespace Daemaged.NTP
     /// NTP servers that generally means an atomic clock, within Windows
     /// local networks it is the best time source in the network), higher
     /// numbers mean increasing distance from the primary source.</value>
-    public int Stratum { get { return Packet.Stratum; } }
+    public int Stratum => Packet.Stratum;
 
     /// <summary>
     /// Gets the difference between the server time and time on the local machine.

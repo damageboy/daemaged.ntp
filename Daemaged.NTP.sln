@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Daemaged.NTP", "Daemaged.NTP.csproj", "{26B541BF-1214-41A3-85E6-65098128F6DA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Daemaged.NTP", "src\Daemaged.NTP\Daemaged.NTP.csproj", "{26B541BF-1214-41A3-85E6-65098128F6DA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
