@@ -26,6 +26,12 @@
     <OutputPath>..\..\build\debug</OutputPath>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net451|AnyCPU'">
+    <DocumentationFile>..\..\build\release\net451\Daemaged.NTP.xml</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard1.3|AnyCPU'">
+    <DocumentationFile>..\..\build\release\netstandard1.3\Daemaged.NTP.xml</DocumentationFile>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Threading" Version="4.3.0" />
   </ItemGroup>
