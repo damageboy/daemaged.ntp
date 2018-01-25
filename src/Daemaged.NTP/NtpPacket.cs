@@ -2,7 +2,6 @@ using System;
 
 namespace Daemaged.NTP
 {
-
   /// <summary>
   /// Represents a NTP packet.
   /// </summary>
@@ -31,14 +30,13 @@ namespace Daemaged.NTP
     const int OFFSET_LI = 6;
     const int OFFSET_MODE = 0;
     const int OFFSET_VN = 3;
-    internal const int MinPacketSize = 0x30;
+
     /// <summary>
     /// Minimal size of an NTP packet (they can be larger,
     /// but the optional fields are at the end and this
     /// class ignores them).
     /// </summary>
-    
-
+    internal const int MinPacketSize = 0x30;
 
     /// <summary>
     /// Constructs an empty (i.e. with all bits set to 0) packet.
@@ -155,7 +153,7 @@ namespace Daemaged.NTP
     /// Returns the leap second indicator.
     /// </summary>
     /// <value>Leap indicator.</value>
-    public NtpLeapIndicator LeapIndicator { 
+    public NtpLeapIndicator LeapIndicator {
       get {
         switch (GetBits(_data[0], OFFSET_LI, LENGTH_LI))
         {
@@ -221,9 +219,29 @@ namespace Daemaged.NTP
     public NtpTimestamp TransmitTimestamp => new NtpTimestamp(_data, INDEX_TRANSMIT_TIMESTAMP);
 
     /// <summary>
-    /// NTP/SNTP protocol version number.
+    /// RootDelay: the server's estimated aggregate round-trip-time delay to 
+    /// the stratum 1 server.
     /// </summary>
-    /// <value>Protocol version number (NTP is 3, SNTP is 4).</value>
-    public int VersionNumber => GetBits(_data[0], OFFSET_VN, LENGTH_VN);
+    /// <value>Duration in milliseconds.</value>
+    public double RootDelay {
+      get {
+        byte[] rootDelayBuffer = GetRootDelay();
+
+        return 1000 * ((double)(256 * (256 * (256 * rootDelayBuffer[0] + rootDelayBuffer[1]) + rootDelayBuffer[2]) + rootDelayBuffer[3]) / 0x10000);
+      }
+    }
+
+    /// <summary>
+    /// RootDispersion: the server's estimated maximum measurement error relative to 
+    /// the stratum 1 server.
+    /// </summary>
+    /// <value>Duration in milliseconds.</value>
+    public double RootDispersion {
+      get {
+        byte[] rootDispersionBuffer = GetRootDispersion();
+
+        return 1000 * ((double)(256 * (256 * (256 * rootDispersionBuffer[0] + rootDispersionBuffer[1]) + rootDispersionBuffer[2]) + rootDispersionBuffer[3]) / 0x10000);
+      }
+    }
   }
 }

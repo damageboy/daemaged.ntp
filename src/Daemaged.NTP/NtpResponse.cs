@@ -1,3 +1,5 @@
+using System;
+
 namespace Daemaged.NTP
 {
   /// <summary>
@@ -32,6 +34,34 @@ namespace Daemaged.NTP
         var difference = (Packet.ReceiveTimestamp - Packet.OriginateTimestamp) + (Packet.TransmitTimestamp - Packet.DestinationTimestamp);
         return difference.Halve();
       }
+    }
+
+    public void Validate(int maxStratum = 15, TimeSpan? maxPollInterval = null, TimeSpan? maxDispersion = null)
+    {
+      maxPollInterval = maxPollInterval ?? TimeSpan.FromHours(36);
+      maxDispersion = maxDispersion ?? TimeSpan.FromSeconds(16);
+
+      if (Packet.Mode != NtpMode.Server && Packet.Mode != NtpMode.Broadcast)
+        throw new NtpException("Invalid mode");
+
+      if (Packet.LeapIndicator == NtpLeapIndicator.AlarmCondition)
+        throw new NtpException("Invalid leap indicator");
+
+      if (Packet.Stratum < 1 || Packet.Stratum > maxStratum)
+        throw new NtpException("Invalid stratum");
+
+      TimeSpan freshness = (Packet.TransmitTimestamp - Packet.ReferenceTimestamp).ToTimeSpan();
+
+      if (freshness > maxPollInterval)
+        throw new NtpException("Server clock not fresh");
+
+      var lambda = Packet.RootDelay / 2 + Packet.RootDispersion;
+
+      if (lambda > maxDispersion.Value.TotalMilliseconds)
+        throw new NtpException("Invalid dispersion");
+
+      if (Packet.TransmitTimestamp < Packet.ReferenceTimestamp)
+        throw new NtpException("Invalid time");
     }
   }
 }
